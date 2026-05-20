@@ -9,7 +9,6 @@ local thirdPersonKeyHeld = false
 local canThrow           = true
 local readyKeyHeld       = false
 
--- ── ROLE ──────────────────────────────────────────────────
 net.Receive( "Role_Assigned", function()
     myRole = net.ReadInt( 8 )
     print( "[Roles] I am role: " .. myRole )
@@ -23,7 +22,6 @@ function LocalRoundState()
     return roundState
 end
 
--- ── ROUND STATE ───────────────────────────────────────────
 net.Receive( "Round_StateChanged", function()
     roundState = net.ReadInt( 8 )
     print( "[Round] Round state: " .. roundState )
@@ -33,7 +31,6 @@ net.Receive( "Round_StateChanged", function()
     end
 end )
 
--- ── READY UP ──────────────────────────────────────────────
 net.Receive( "Round_ReadyStatus", function()
     readyCount = net.ReadInt( 8 )
     totalCount = net.ReadInt( 8 )
@@ -51,7 +48,6 @@ hook.Add( "Think", "Round_ReadyInput", function()
     end
 end )
 
--- ── THROW ABILITY ─────────────────────────────────────────
 hook.Add( "Think", "Poltergeist_ThrowInput", function()
     if LocalRole() != ROLE_GHOST then return end
     if LocalRoundState() != ROUND_ACTIVE then return end
@@ -69,7 +65,6 @@ net.Receive( "Poltergeist_CooldownStatus", function()
     cooldownRemaining = net.ReadFloat()
 end )
 
--- ── THIRD PERSON ──────────────────────────────────────────
 hook.Add( "Think", "Poltergeist_ThirdPerson", function()
     local ply = LocalPlayer()
     if not IsValid( ply ) then return end
@@ -112,15 +107,102 @@ hook.Add( "ShouldDrawLocalPlayer", "Poltergeist_DrawSelf", function( ply )
     return thirdPerson
 end )
 
--- ── DISABLE JUMP ──────────────────────────────────────────
 hook.Add( "PlayerBindPress", "DisableJump", function( ply, bind, pressed )
     if bind == "+jump" then return true end
 end )
 
--- ── SPECTATOR SOUNDS ──────────────────────────────────────
 hook.Add( "EntityEmitSound", "Spectator_NoSound", function( data )
     local ent = data.Entity
     if not IsValid( ent ) then return end
     if not ent:IsPlayer() then return end
     if ent:GetNWBool( "IsDeadSpectator", false ) then return false end
+end )
+
+local huntActive    = false
+local huntKeyHeld   = false
+local losActive     = false
+local highlightedPlayers = {}
+
+net.Receive( "Hunt_Started", function()
+    huntActive = true
+    print( "[Hunt] Hunt started." )
+end )
+
+net.Receive( "Hunt_Ended", function()
+    huntActive = false
+    losActive  = false
+    highlightedPlayers = {}
+    print( "[Hunt] Hunt ended." )
+end )
+
+net.Receive( "Hunt_LOSUpdate", function()
+    losActive = net.ReadBool()
+end )
+
+hook.Add( "Think", "Hunt_KeyInput", function()
+    if LocalRole() != ROLE_GHOST then return end
+    if LocalRoundState() != ROUND_ACTIVE then return end
+    if huntActive then return end
+
+    if input.IsKeyDown( KEY_N ) and not huntKeyHeld then
+        huntKeyHeld = true
+        net.Start( "Hunt_KeyPress" )
+        net.SendToServer()
+    elseif not input.IsKeyDown( KEY_N ) then
+        huntKeyHeld = false
+    end
+end )
+
+-- highlight exorcists in LOS during hunt (temporary)
+hook.Add( "PostDrawOpaqueRenderables", "Hunt_HighlightPlayers", function()
+    if LocalRole() != ROLE_GHOST then return end
+    if not huntActive then return end
+    if not losActive then return end
+
+    for _, ply in ipairs( player.GetAll() ) do
+        if not IsValid( ply ) then continue end
+        if ply == LocalPlayer() then continue end
+        if not ply:Alive() then continue end
+        if ply:GetNWBool( "IsDeadSpectator", false ) then continue end
+        if ply:GetNWInt( "Role", ROLE_NONE ) != ROLE_EXORCIST then continue end
+
+        render.SetColorModulation( 1, 0, 0 )
+        render.SetBlend( 0.3 )
+        ply:DrawModel()
+        render.SetColorModulation( 1, 1, 1 )
+        render.SetBlend( 1 )
+    end
+end )
+
+hook.Add( "HUDShouldDraw", "HideExtraHUD", function( name )
+    if name == "CHudDeathNotice" then return false end
+end )
+
+hook.Add( "DrawDeathNotice", "HideDeathNotice", function()
+    return true
+end )
+
+hook.Add( "PostDrawTranslucentRenderables", "HideNametags", function()
+end )
+
+hook.Add( "HUDDrawTargetID", "HideTargetID", function()
+    return true
+end )
+
+hook.Add( "EntityEmitSound", "Ghost_NoFootsteps", function( data )
+    local ent = data.Entity
+    if not IsValid( ent ) then return end
+    if not ent:IsPlayer() then return end
+    if ent:GetNWInt( "Role", ROLE_NONE ) != ROLE_GHOST then return end
+    if huntActive then return end
+
+    local sound = data.SoundName
+    if string.find( sound, "footstep" ) or
+       string.find( sound, "step" ) or
+       string.find( sound, "wade" ) or
+       string.find( sound, "dirt" ) or
+       string.find( sound, "concrete" ) or
+       string.find( sound, "metal" ) then
+        return false
+    end
 end )

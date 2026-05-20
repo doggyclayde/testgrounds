@@ -1,3 +1,5 @@
+-- I will remove these soon.
+
 if SERVER then
     util.AddNetworkString( "Rag_Watch" )
     util.AddNetworkString( "Rag_Create" )
@@ -24,10 +26,7 @@ if SERVER then
         net.Broadcast()
     end )
 
-    -- keep serverside ragdoll but hide it clientside
-    -- it handles collision, client copy handles visuals
     hook.Add( "CreateEntityRagdoll", "Rag_KeepServerRagdoll", function( ply, ragdoll )
-        -- do nothing, let it exist naturally
     end )
 
 elseif CLIENT then
@@ -152,7 +151,6 @@ elseif CLIENT then
         end )
     end )
 
-    -- death camera follows the serverside ragdoll
     hook.Add( "CalcView", "Rag_DeathCam", function( ply, origin, angles, fov )
         if ply:Alive() then return end
         if ply:GetNWBool( "IsDeadSpectator", false ) then return end
@@ -160,7 +158,6 @@ elseif CLIENT then
         local rag = activeRagdolls[ply]
         if not IsValid( rag ) then return end
 
-        -- get the head bone position if possible, otherwise use entity center
         local headBone = rag:LookupBone( "ValveBiped.Bip01_Pelvis" )
         local ragPos
 

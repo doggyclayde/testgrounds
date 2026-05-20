@@ -68,6 +68,7 @@ hook.Add("HUDPaint", "Poltergeist_HUD", function()
     end
     
     -- ── SANITY BAR (exorcists only, during active round) ─────
+    -- this is temporary
     if LocalRoundState() == ROUND_ACTIVE and LocalRole() == ROLE_EXORCIST then
         local ply     = LocalPlayer()
         local sanity  = ply:GetNWFloat( "Sanity", 100 )
@@ -76,21 +77,17 @@ hook.Add("HUDPaint", "Poltergeist_HUD", function()
         local barX    = sw * 0.5 - barW * 0.5
         local barY    = sh - 80
 
-        -- background
         surface.SetDrawColor( Color( 0, 0, 0, 150 ) )
         surface.DrawRect( barX, barY, barW, barH )
 
-        -- sanity fill color shifts from green to red
         local r = math.Clamp( ( 1 - sanity / 100 ) * 255 * 2, 0, 255 )
         local g = math.Clamp( ( sanity / 100 ) * 255 * 2, 0, 255 )
         surface.SetDrawColor( Color( r, g, 0, 200 ) )
         surface.DrawRect( barX, barY, barW * ( sanity / 100 ), barH )
 
-        -- border
         surface.SetDrawColor( Color( 255, 255, 255, 60 ) )
         surface.DrawOutlinedRect( barX, barY, barW, barH )
 
-        -- label
         draw.SimpleText(
             "SANITY  " .. math.ceil( sanity ) .. "%",
             "DermaDefault",
@@ -98,18 +95,6 @@ hook.Add("HUDPaint", "Poltergeist_HUD", function()
             Color( 255, 255, 255, 180 ),
             TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP
         )
-
-        -- warning flash below 25%
-        if sanity < 25 then
-            local alpha = math.abs( math.sin( CurTime() * 3 ) ) * 180
-            draw.SimpleText(
-                "LOW SANITY",
-                "DermaLarge",
-                sw * 0.5, sh * 0.5 - 80,
-                Color( 255, 50, 50, alpha ),
-                TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER
-            )
-        end
     end
 
     -- ── GHOST ONLY BELOW THIS LINE ────────────────────────
