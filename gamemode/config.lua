@@ -7,11 +7,13 @@
 CONFIG = {}
 
 -- ── PLAYER SPEEDS ─────────────────────────────────────────
-CONFIG.EXORCIST_WALK_SPEED  = 160   -- 200 default * 0.8
-CONFIG.EXORCIST_RUN_SPEED   = 320   -- 400 default * 0.8
+CONFIG.EXORCIST_WALK_SPEED      = 180   -- 200 default * 0.8
+CONFIG.EXORCIST_SPRINT_SPEED    = 340   -- 400 default * 0.8
+CONFIG.EXORCIST_SPRINT_DURATION = 5     -- seconds before exhausted
+CONFIG.EXORCIST_SPRINT_REGEN    = 6     -- seconds to fully regenerate
+
 
 CONFIG.GHOST_WALK_SPEED = math.floor( CONFIG.EXORCIST_WALK_SPEED * 1.5 )  -- 240
-CONFIG.GHOST_RUN_SPEED  = math.floor( CONFIG.EXORCIST_RUN_SPEED * 1.5 )   -- 480
 
 -- ── HUNT SPEEDS ───────────────────────────────────────────
 CONFIG.HUNT_BASE_SPEED      = 112   -- ghost base hunt speed (30% slower than exorcist)
